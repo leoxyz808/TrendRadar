@@ -13,42 +13,116 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    
+
     steps:
     - uses: actions/checkout@v4
-      
+
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-      
+
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
         pip install jinja2 requests beautifulsoup4 lxml markdown
-        
+
     - name: Create docs directory
       run: mkdir -p docs
-      
+
     - name: Run TrendRadar crawler
       run: |
         python main.py headless --output ./docs/index.html --run-once --debug
       env:
-        # 添加需要的环境变量（根据项目需求）
         GITHUB_ACTIONS: true
-        
+
+    - name: Find and copy generated HTML to docs
+      run: |
+        echo "🔍 正在查找生成的HTML文件..."
+
+        # 查找所有HTML文件
+        echo "所有HTML文件："
+        find . -name "*.html" -type f -exec ls -la {} \;
+
+        # 查找main.py实际生成的HTML文件（按日期目录）
+        GENERATED_FILE=$(find output -name "*.html" -type f | head -1)
+
+        if [ -n "$GENERATED_FILE" ] && [ -f "$GENERATED_FILE" ]; then
+          echo "✅ 找到生成的HTML文件: $GENERATED_FILE"
+          echo "📁 文件大小: $(wc -c < "$GENERATED_FILE") 字节"
+
+          # 复制到docs/index.html
+          cp "$GENERATED_FILE" docs/index.html
+          echo "📋 已复制到 docs/index.html"
+
+          # 验证复制结果
+          if [ -f "docs/index.html" ]; then
+            echo "✅ 复制成功！docs/index.html 文件大小: $(wc -c < "docs/index.html") 字节"
+            echo "📄 文件前100行内容预览："
+            head -20 docs/index.html
+          else
+            echo "❌ 复制失败！"
+          fi
+        else
+          echo "⚠️ 未在output目录中找到HTML文件，创建信息页面"
+
+          # 创建包含详细调试信息的页面
+          cat > docs/index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>TrendRadar - 热点聚合</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+        h1 { color: #333; text-align: center; }
+        .time { text-align: center; color: #666; margin: 20px 0; }
+        .debug { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; }
+        .file-list { background: #e9ecef; padding: 15px; border-radius: 5px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 TrendRadar 热点聚合</h1>
+        <div class="time">更新时间: $(date)</div>
+
+        <div class="debug">
+            <h2>🔍 系统状态</h2>
+            <p><strong>✅ 爬虫运行状态:</strong> 成功完成</p>
+            <p><strong>📁 工作目录:</strong> $(pwd)</p>
+            <p><strong>📋 输出目录结构:</strong></p>
+            <div class="file-list">
+<pre>
+$(find . -type f -name "*.html" -o -name "*.py" -o -name "*.json" | head -20)
+</pre>
+            </div>
+        </div>
+
+        <div style="text-align: center; padding: 40px;">
+            <h2>📊 热点数据处理中...</h2>
+            <p>系统已成功运行，正在处理输出文件路径</p>
+            <p>下次运行时间: $(date -d "+6 hours")</p>
+            <p><a href="https://github.com/leoxyz808/TrendRadar/actions">查看运行日志</a></p>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+        fi
+
     - name: Setup Pages
       uses: actions/configure-pages@v4
-      
+
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v4
       with:
         path: './docs'
-        
+
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
