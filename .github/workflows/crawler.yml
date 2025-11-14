@@ -62,7 +62,7 @@ jobs:
           # 验证复制结果
           if [ -f "docs/index.html" ]; then
             echo "✅ 复制成功！docs/index.html 文件大小: $(wc -c < "docs/index.html") 字节"
-            echo "📄 文件前100行内容预览："
+            echo "📄 文件前20行内容预览："
             head -20 docs/index.html
           else
             echo "❌ 复制失败！"
@@ -70,7 +70,7 @@ jobs:
         else
           echo "⚠️ 未在output目录中找到HTML文件，创建信息页面"
 
-          # 创建包含详细调试信息的页面
+          # 创建简单的状态页面（避免YAML语法问题）
           cat > docs/index.html << 'EOF'
 <!DOCTYPE html>
 <html>
@@ -88,26 +88,18 @@ jobs:
 </head>
 <body>
     <div class="container">
-        <h1>🔥 TrendRadar 热点聚合</h1>
-        <div class="time">更新时间: $(date)</div>
-
+        <h1>TrendRadar Hot News</h1>
+        <div class="time">Update time: $(date)</div>
         <div class="debug">
-            <h2>🔍 系统状态</h2>
-            <p><strong>✅ 爬虫运行状态:</strong> 成功完成</p>
-            <p><strong>📁 工作目录:</strong> $(pwd)</p>
-            <p><strong>📋 输出目录结构:</strong></p>
-            <div class="file-list">
-<pre>
-$(find . -type f -name "*.html" -o -name "*.py" -o -name "*.json" | head -20)
-</pre>
-            </div>
+            <h2>System Status</h2>
+            <p><strong>Crawler Status:</strong> Running successfully</p>
+            <p><strong>Working Directory:</strong> $(pwd)</p>
         </div>
-
         <div style="text-align: center; padding: 40px;">
-            <h2>📊 热点数据处理中...</h2>
-            <p>系统已成功运行，正在处理输出文件路径</p>
-            <p>下次运行时间: $(date -d "+6 hours")</p>
-            <p><a href="https://github.com/leoxyz808/TrendRadar/actions">查看运行日志</a></p>
+            <h2>Hot Data Processing...</h2>
+            <p>System is running successfully</p>
+            <p>Next run: $(date -d "+6 hours")</p>
+            <p><a href="https://github.com/leoxyz808/TrendRadar/actions">View Logs</a></p>
         </div>
     </div>
 </body>
