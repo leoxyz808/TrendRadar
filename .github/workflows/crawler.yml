@@ -1,5 +1,6 @@
 name: TrendRadar Hot News Crawler
 
+
 on:
   schedule:
     - cron: '0 */6 * * *'  # 每6小时运行一次
@@ -16,11 +17,12 @@ jobs:
     
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}    con
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+          
       
     - name: Setup Python
       uses: actions/setup-python@v4
@@ -39,8 +41,10 @@ jobs:
         
     - name: Run TrendRadar
       run: |
-        python main.py
-        continue-on-error: true
+      python main.py        
+        
+      
+        
         
     - name: Create simple index.html
       run: |
