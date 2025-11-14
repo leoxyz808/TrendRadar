@@ -1,120 +1,58 @@
-name: TrendRadar Hot News Crawler
+name: Deploy TrendRadar to GitHub Pages
 
 on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
   schedule:
     - cron: '0 */6 * * *'  # 每6小时运行一次
-  workflow_dispatch:  # 允许手动触发
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-    - uses: actions/checkout@v4
-
+    - name: Checkout
+      uses: actions/checkout@v4
+      
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-
+        
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
-        pip install jinja2 requests beautifulsoup4 lxml markdown
-
-    - name: Create docs directory
-      run: mkdir -p docs
-
-    - name: Run TrendRadar crawler
+        python -m pip install --upgrade pip
+        pip install requests pytz PyYAML
+        
+    - name: Run TrendRadar and generate HTML
       run: |
-        python main.py headless --output ./docs/index.html --run-once --debug
-      env:
-        GITHUB_ACTIONS: true
-
-    - name: Find and copy generated HTML to docs
-      run: |
-        echo "🔍 正在查找生成的HTML文件..."
-
-        # 查找所有HTML文件
-        echo "所有HTML文件："
-        find . -name "*.html" -type f -exec ls -la {} \;
-
-        # 查找main.py实际生成的HTML文件（按日期目录）
-        GENERATED_FILE=$(find output -name "*.html" -type f | head -1)
-
-        if [ -n "$GENERATED_FILE" ] && [ -f "$GENERATED_FILE" ]; then
-          echo "✅ 找到生成的HTML文件: $GENERATED_FILE"
-          echo "📁 文件大小: $(wc -c < "$GENERATED_FILE") 字节"
-
-          # 复制到docs/index.html
-          cp "$GENERATED_FILE" docs/index.html
-          echo "📋 已复制到 docs/index.html"
-
-          # 验证复制结果
-          if [ -f "docs/index.html" ]; then
-            echo "✅ 复制成功！docs/index.html 文件大小: $(wc -c < "docs/index.html") 字节"
-            echo "📄 文件前20行内容预览："
-            head -20 docs/index.html
-          else
-            echo "❌ 复制失败！"
-          fi
-        else
-          echo "⚠️ 未在output目录中找到HTML文件，创建信息页面"
-
-          # 创建简单的状态页面（避免YAML语法问题）
-          cat > docs/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>TrendRadar - 热点聚合</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
-        h1 { color: #333; text-align: center; }
-        .time { text-align: center; color: #666; margin: 20px 0; }
-        .debug { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; }
-        .file-list { background: #e9ecef; padding: 15px; border-radius: 5px; font-family: monospace; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>TrendRadar Hot News</h1>
-        <div class="time">Update time: $(date)</div>
-        <div class="debug">
-            <h2>System Status</h2>
-            <p><strong>Crawler Status:</strong> Running successfully</p>
-            <p><strong>Working Directory:</strong> $(pwd)</p>
-        </div>
-        <div style="text-align: center; padding: 40px;">
-            <h2>Hot Data Processing...</h2>
-            <p>System is running successfully</p>
-            <p>Next run: $(date -d "+6 hours")</p>
-            <p><a href="https://github.com/leoxyz808/TrendRadar/actions">View Logs</a></p>
-        </div>
-    </div>
-</body>
-</html>
-EOF
-        fi
-
+        mkdir -p docs
+        python main.py headless --output ./docs/index.html --run-once
+        
     - name: Setup Pages
       uses: actions/configure-pages@v4
-
+      
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v4
       with:
         path: './docs'
 
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v4
