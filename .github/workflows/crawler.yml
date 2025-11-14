@@ -30,47 +30,47 @@ jobs:
     - name: Generate page
       run: |
         cat > docs/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>TrendRadar - 热点聚合</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
-        h1 { color: #333; text-align: center; }
-        .stats { display: flex; justify-content: space-around; margin: 30px 0; }
-        .stat { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; }
-        .time { text-align: center; color: #666; margin: 20px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🔥 TrendRadar 热点聚合</h1>
-        <div class="time">更新时间: $(date)</div>
-        <div class="stats">
-            <div class="stat">
-                <h3>35+</h3>
-                <p>监控平台</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>TrendRadar - 热点聚合</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+                .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; }
+                h1 { color: #333; text-align: center; }
+                .stats { display: flex; justify-content: space-around; margin: 30px 0; }
+                .stat { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+                .time { text-align: center; color: #666; margin: 20px 0; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🔥 TrendRadar 热点聚合</h1>
+                <div class="time">更新时间: $(date)</div>
+                <div class="stats">
+                    <div class="stat">
+                        <h3>35+</h3>
+                        <p>监控平台</p>
+                    </div>
+                    <div class="stat">
+                        <h3>24/7</h3>
+                        <p>实时监控</p>
+                    </div>
+                    <div class="stat">
+                        <h3>AI</h3>
+                        <p>智能分析</p>
+                    </div>
+                </div>
+                <div style="text-align: center; padding: 40px; background: #e9ecef; border-radius: 8px;">
+                    <h2>📊 热点数据正在整合中...</h2>
+                    <p>系统正在从各大平台抓取最新热点</p>
+                    <p>下次更新: 6小时后</p>
+                </div>
             </div>
-            <div class="stat">
-                <h3>24/7</h3>
-                <p>实时监控</p>
-            </div>
-            <div class="stat">
-                <h3>AI</h3>
-                <p>智能分析</p>
-            </div>
-        </div>
-        <div style="text-align: center; padding: 40px; background: #e9ecef; border-radius: 8px;">
-            <h2>📊 热点数据正在整合中...</h2>
-            <p>系统正在从各大平台抓取最新热点</p>
-            <p>下次更新: 6小时后</p>
-        </div>
-    </div>
-</body>
-</html>
-EOF
+        </body>
+        </html>
+        EOF
 
     - name: Setup Pages
       uses: actions/configure-pages@v3
