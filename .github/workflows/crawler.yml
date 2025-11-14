@@ -1,6 +1,97 @@
-    - name: Commit and push if changes
-        run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
-          git add -A
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update by GitHub Actions at $(TZ=Asia/Shanghai date)" && git push)
+name: TrendRadar Hot News Crawler
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # 每6小时运行一次
+  workflow_dispatch:  # 允许手动触发
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/crawler.yml'
+      - 'main.py'
+      - 'requirements.txt'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install beautifulsoup4 lxml markdown jinja2
+        
+    - name: Create docs directory
+      run: |
+        mkdir -p docs
+        rm -rf docs/*
+        
+    - name: Run TrendRadar and generate report
+      run: |
+        python main.py --output-dir docs --format html --no-notification
+      env:
+        TRENDRADAR_OUTPUT_DIR: docs
+        TRENDRADAR_FORMAT: html
+        TRENDRADAR_NO_NOTIFICATION: true
+        
+    - name: Create index.html if not exists
+      run: |
+        if [ ! -f "docs/index.html" ]; then
+          cat > docs/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrendRadar - 热点聚合</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .update-time { text-align: center; color: #666; margin-bottom: 30px; }
+        .placeholder { text-align: center; padding: 40px; color: #888; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 TrendRadar 热点聚合</h1>
+        <div class="update-time">最后更新: $(date '+%Y-%m-%d %H:%M:%S')</div>
+        <div class="placeholder">
+            <h2>📊 热点数据正在生成中...</h2>
+            <p>系统正在抓取最新热点数据，请稍后刷新页面。</p>
+            <p>数据每小时自动更新，下次更新时间: $(date -d '+1 hour' '+%H:%M')</p>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+        fi
+        
+    - name: Setup Pages
+      uses: actions/configure-pages@v3
+      
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: './docs'
+        
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
